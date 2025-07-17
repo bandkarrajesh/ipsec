@@ -1,3 +1,7 @@
+=======================================================================================================
+Site to site VPN config for static route
+================================================
+
 ubuntu@instance:~$ sudo apt update -y && sudo apt install apt-utils libreswan
 ubuntu@instance:~$ sudo apt install vim
 ubuntu@instance:~$ sudo apt install inetutils-ping inetutils-telnet net-tools
@@ -63,3 +67,94 @@ ubuntu@instance:~$ sudo iptables -A FORWARD -s 192.168.1.0/24 -d 192.168.0.0/24 
 ubuntu@instance:~$ sudo iptables -A FORWARD -s 192.168.0.0/24 -d 192.168.1.0/24 -j ACCEPT
 ubuntu@instance:~$ sudo iptables -L FORWARD --line-numbers
 ubuntu@instance:~$ sudo iptables -D FORWARD 1
+
+=======================================================================================================
+For IKEv2 
+=======================
+
+ubuntu@instance:~$ sudo cat /etc/ipsec.d/oci-ipsec.conf 
+conn oracle-tunnel-1
+     left=192.168.1.104
+     leftid=68.233.113.236 # See preceding note about 1-1 NAT device
+     right=152.67.31.172
+     authby=secret
+     leftsubnet=0.0.0.0/0 
+     rightsubnet=0.0.0.0/0
+     auto=start
+     mark=5/0xffffffff # Needs to be unique across all tunnels
+     vti-interface=vti01
+     vti-routing=no
+     ikev2=insist # To use IKEv2, change to ikev2=insist 
+     ike=aes_cbc256-sha2_384;modp1536
+     phase2alg=aes_gcm256;modp1536
+     encapsulation=yes
+     ikelifetime=28800s
+     salifetime=3600s
+     keyexchange=ike
+conn oracle-tunnel-2
+     left=192.168.1.104
+     leftid=68.233.113.236 # See preceding note about 1-1 NAT device
+     right=150.230.237.124
+     authby=secret
+     leftsubnet=0.0.0.0/0
+     rightsubnet=0.0.0.0/0
+     auto=start
+     mark=6/0xffffffff # Needs to be unique across all tunnels
+     vti-interface=vti02
+     vti-routing=no
+     ikev2=insist # To use IKEv2, change to ikev2=insist 
+     ike=aes_cbc256-sha2_384;modp1536
+     phase2alg=aes_gcm256;modp1536 
+     encapsulation=yes
+     ikelifetime=28800s
+     salifetime=3600s
+     keyexchange=ike
+ubuntu@instance:~$ 
+
+=======================================================================================================
+For CPE behind NAT
+=======================
+
+ubuntu@instance:~$ sudo cat /etc/ipsec.d/oci-ipsec.conf
+conn oracle-tunnel-1
+     left=192.168.1.104
+     #leftid=68.233.113.236 # See preceding note about 1-1 NAT device
+     right=152.67.31.172
+     authby=secret
+     leftsubnet=0.0.0.0/0 
+     rightsubnet=0.0.0.0/0
+     auto=start
+     mark=5/0xffffffff # Needs to be unique across all tunnels
+     vti-interface=vti01
+     vti-routing=no
+     ikev2=insist # To use IKEv2, change to ikev2=insist 
+     ike=aes_cbc256-sha2_384;modp1536
+     phase2alg=aes_gcm256;modp1536
+     encapsulation=yes
+     ikelifetime=28800s
+     salifetime=3600s
+     keyexchange=ike
+conn oracle-tunnel-2
+     left=192.168.1.104
+     #leftid=68.233.113.236 # See preceding note about 1-1 NAT device
+     right=150.230.237.124
+     authby=secret
+     leftsubnet=0.0.0.0/0
+     rightsubnet=0.0.0.0/0
+     auto=start
+     mark=6/0xffffffff # Needs to be unique across all tunnels
+     vti-interface=vti02
+     vti-routing=no
+     ikev2=insist # To use IKEv2, change to ikev2=insist 
+     ike=aes_cbc256-sha2_384;modp1536
+     phase2alg=aes_gcm256;modp1536 
+     encapsulation=yes
+     ikelifetime=28800s
+     salifetime=3600s
+     keyexchange=ike
+ubuntu@instance:~$ sudo cat /etc/ipsec.d/oci-ipsec.secrets 
+192.168.1.104 150.230.237.124 : PSK "s6x2H2bUQUIdHW0UVgxu4ed5yW9XInAq"
+192.168.1.104 152.67.31.172 : PSK "s6x2H2bUQUIdHW0UVgxu4ed5yW9XInAq"
+ubuntu@instance:~$ 
+
+=======================================================================================================
